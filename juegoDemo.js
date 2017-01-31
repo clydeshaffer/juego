@@ -43,11 +43,14 @@ growTentacle();
 
 var rockmanSprite = new Juego.SpriteSheet('http://i.imgur.com/zyQUbWo.png', 10, 7);
 
+var horizontalInputAxis = new Juego.InputAxis(37, 39);
+
 var rockman = new Juego.RenderNode();
 rockman.position = new Vector2(300,300);
 rockman.sprite = rockmanSprite;
 rockman.update = function() {
     this.spriteFrame = Math.floor(Juego.Time.totalTime / 125) % 70;
+    this.position.x += horizontalInputAxis.sample() * Juego.Time.deltaTime / 25;
 }
 
 Juego.worldTree.children.push(rockman);

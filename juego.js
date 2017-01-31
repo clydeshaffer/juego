@@ -140,6 +140,7 @@ var Juego = new (function () {
     }
 
     function SpriteSheet(url, columns, rows) {
+        this.center = new Vector2(0, 0);
         this.rows = rows;
         this.columns = columns;
         this.frameCount = rows * columns;
@@ -160,7 +161,7 @@ var Juego = new (function () {
             var r = (frame - c) / this.columns;
             var width = this.imgElem.width / this.columns;
             var height = this.imgElem.height / this.rows;
-            ctx.drawImage(this.imgElem, c * this.imgElem.width / this.columns, r * this.imgElem.height / this.rows, width,  height, 0, 0, width, height);
+            ctx.drawImage(this.imgElem, c * this.imgElem.width / this.columns, r * this.imgElem.height / this.rows, width,  height, -this.center.x, -this.center.y, width, height);
         }
     }
 
@@ -170,6 +171,8 @@ var Juego = new (function () {
     this.position = new Vector2(0, 0);
     this.rotation = 0;
     this.scale = new Vector2(1,1);
+    this.velocity = new Vector2(0, 0);
+    this.acceleration = new Vector2(0, 0);
     this.children = [];
     this.points = [];
     this.sprite = null;
@@ -177,6 +180,7 @@ var Juego = new (function () {
     this.strokeStyle = "black";
     this.fillStyle = null;
     this.update = doNothing;
+    this.static = false;
     this.traversalFlag = false; //security against cyclic RenderNode hierarchy
     }
 
@@ -184,6 +188,13 @@ var Juego = new (function () {
         if(this.traversalFlag == traversal) return;
         this.traversalFlag = traversal;
         this.update();
+
+
+        //d = v0t + 1/2 a t^2
+        this.velocity = this.velocity.add(this.acceleration.scale(Time.deltaTime));
+        var deltaPosition = this.velocity.scale(Time.deltaTime).add(this.acceleration.scale(Math.pow(Time.deltaTime, 2) / 2));
+        this.position = this.position.add(deltaPosition);
+
         this.children.forEach(function(child) {
             child.updateTree(traversal);
         });
@@ -223,7 +234,9 @@ var Juego = new (function () {
         totalTime : 0
     }
 
-    function InputAxis(negativeKey, positiveKey) {
+    var Input = {};
+
+    Input.Axis = function(negativeKey, positiveKey) {
         this.positiveKey = positiveKey;
         this.negativeKey = negativeKey;
 
@@ -245,20 +258,59 @@ var Juego = new (function () {
         window.addEventListener("keyup", makeKeyUpdate(0));
     }
 
-    InputAxis.prototype.sample = function() {
+    Input.Axis.prototype.sample = function() {
         return this.positiveKeyPressed - this.negativeKeyPressed;
+    }
+
+    Input.buttons = [];
+
+    Input.Button = function(keyCode) {
+        this.pressed = false;
+        this.wasPressed = false;
+        var self = this;
+        function makeKeyUpdate(keyStatus) {
+            return function(event) {
+                if(event.keyCode == keyCode) {
+                    self.pressed = keyStatus;
+                }
+            }
+        }
+
+        window.addEventListener("keydown", makeKeyUpdate(1));
+        window.addEventListener("keyup", makeKeyUpdate(0));
+
+        Input.buttons.push(this);
+    }
+
+    Input.Button.prototype.sample = function() {
+        return this.pressed;
+    }
+
+    Input.Button.prototype.getButtonDown = function() {
+        return this.pressed && !this.wasPressed;
+    }
+
+    Input.Button.prototype.getButtonUp = function() {
+        return !this.pressed && this.wasPressed;
+    }
+
+    Input.tick = function() {
+        Input.buttons.forEach(function(button) {
+            button.wasPressed = button.pressed;
+        });
     }
 
     function drawFrame(timestamp) {
         var deltaT = timestamp - previousRenderTime;
         ctx.clearRect(0, 0, 800, 600);
-        Time.totalTime = timestamp;
-        Time.deltaTime = deltaT;
+        Time.totalTime = timestamp / 1000;
+        Time.deltaTime = deltaT / 1000;
         worldTree.updateTree(traversalFlag);
         traversalFlag = !traversalFlag;
         worldTree.renderTree(traversalFlag);
         traversalFlag = !traversalFlag;
         previousRenderTime = timestamp;
+        Input.tick();
         window.requestAnimationFrame(drawFrame);
     }
 
@@ -273,7 +325,7 @@ var Juego = new (function () {
     this.CirclePoints = CirclePoints;
     this.randInt = randInt;
     this.RenderNode = RenderNode;
-    this.InputAxis = InputAxis;
+    this.Input = Input;
     this.SpriteSheet = SpriteSheet;
     this.Time = Time;
     this.worldTree = worldTree;

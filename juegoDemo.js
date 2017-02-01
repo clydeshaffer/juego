@@ -39,7 +39,10 @@ ground.points = [
     new Vector2(0, 100)
 ];
 ground.position = new Vector2(0, 500);
-ground.fillStyle = "brown";
+
+ground.fillStyle = Juego.ctx.createLinearGradient(0, 0, 0, 100);
+ground.fillStyle.addColorStop(0, "brown");
+ground.fillStyle.addColorStop(1, "black");
 
 var sky = new Juego.RenderNode();
 sky.points = [
@@ -48,10 +51,43 @@ sky.points = [
     new Vector2(800, 600),
     new Vector2(0, 600)
 ];
-sky.fillStyle = "gray";
+sky.fillStyle = Juego.ctx.createLinearGradient(0, 0, 0, 600);
+sky.fillStyle.addColorStop(0, "gray");
+sky.fillStyle.addColorStop(0.5, "gray");
+sky.fillStyle.addColorStop(1, "black");
 
-Juego.worldTree.children.push(sky);
-Juego.worldTree.children.push(rockman);
-Juego.worldTree.children.push(ground);
+Juego.worldTree.addChild(sky);
+Juego.worldTree.addChild(rockman);
+Juego.worldTree.addChild(ground);
+
+
+var transformationTester = new Juego.RenderNode()
+transformationTester.points = Juego.CirclePoints(8, 16);
+transformationTester.position.x = 400;
+transformationTester.position.y = 200;
+transformationTester.scale = transformationTester.scale.scale(2);
+
+var transformationTesterChild = new Juego.RenderNode();
+transformationTesterChild.points = Juego.CirclePoints(4, 8);
+transformationTesterChild.position.x = 16;
+transformationTester.addChild(transformationTesterChild);
+Juego.worldTree.addChild(transformationTester);
+
+transformationTester.update = function() {
+    this.rotation += Juego.Time.deltaTime * Math.PI / 2;
+    transformationTesterChild.rotation += Juego.Time.deltaTime;
+    transformationTesterChild.position = transformationTesterChild.position.rotate(Juego.Time.deltaTime * 2);
+}
+
+var localToWorldTestGadget = new Juego.RenderNode();
+localToWorldTestGadget.points = Juego.CirclePoints(3, 4);
+localToWorldTestGadget.strokeStyle = "white";
+
+
+Juego.worldTree.addChild(localToWorldTestGadget);
+
+localToWorldTestGadget.update = function() {
+    this.position = transformationTesterChild.localToWorld(new Vector2(8, 0));
+}
 
 Juego.ctx.imageSmoothingEnabled = false;

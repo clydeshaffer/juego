@@ -19,6 +19,15 @@ Vector2.prototype.scale = function(v) {
     }
 }
 
+Vector2.prototype.rotate = function(radians) {
+    var cos = Math.cos(-radians);
+    var sin = Math.sin(-radians);
+    return new Vector2(
+        (cos * this.x) + (sin * this.y),
+        (cos * this.y) - (sin * this.x)
+    );
+}
+
 Vector2.prototype.dot = function(v) {
     return this.x * v.x + this.y * v.y;
 }
@@ -168,20 +177,21 @@ var Juego = new (function () {
     function doNothing() {}
 
     function RenderNode() {
-    this.position = new Vector2(0, 0);
-    this.rotation = 0;
-    this.scale = new Vector2(1,1);
-    this.velocity = new Vector2(0, 0);
-    this.acceleration = new Vector2(0, 0);
-    this.children = [];
-    this.points = [];
-    this.sprite = null;
-    this.spriteFrame = 0;
-    this.strokeStyle = "black";
-    this.fillStyle = null;
-    this.update = doNothing;
-    this.static = false;
-    this.traversalFlag = false; //security against cyclic RenderNode hierarchy
+        this.position = new Vector2(0, 0);
+        this.rotation = 0;
+        this.scale = new Vector2(1,1);
+        this.velocity = new Vector2(0, 0);
+        this.acceleration = new Vector2(0, 0);
+        this.children = [];
+        this.parent = null;
+        this.points = [];
+        this.sprite = null;
+        this.spriteFrame = 0;
+        this.strokeStyle = "black";
+        this.fillStyle = null;
+        this.update = doNothing;
+        this.static = false;
+        this.traversalFlag = false; //security against cyclic RenderNode hierarchy
     }
 
     RenderNode.prototype.updateTree = function(traversal) {
@@ -222,6 +232,24 @@ var Juego = new (function () {
             child.renderTree();
         });
         ctx.restore();
+    }
+
+    RenderNode.prototype.addChild = function(newChild) {
+        this.children.push(newChild);
+        newChild.parent = this;
+    }
+
+    RenderNode.prototype.transformLocalPoint = function(vec) {
+        return vec.scale(this.scale).rotate(this.rotation).add(this.position);
+    }
+
+    RenderNode.prototype.localToWorld = function(vec) {
+        var v = vec;
+        v = this.transformLocalPoint(v);
+        if(this.parent) {
+            v = this.parent.localToWorld(v);
+        }
+        return v;
     }
 
     var worldTree = new RenderNode();

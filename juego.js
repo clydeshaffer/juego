@@ -153,6 +153,8 @@ var Juego = new (function () {
         this.rows = rows;
         this.columns = columns;
         this.frameCount = rows * columns;
+        this.tileRows = 1;
+        this.tileColumns = 1;
         this.ready = false;
         this.imgElem = document.createElement("img");
         this.imgElem.style = "display:none;";
@@ -164,13 +166,24 @@ var Juego = new (function () {
         this.imgElem.src = url;
     }
 
-    SpriteSheet.prototype.draw = function(frame) {
+    SpriteSheet.prototype.draw = function(frame, tileColumns, tileRows) {
         if(this.ready) {
+            tileColumns = tileColumns || 1;
+            tileRows = tileRows || 1;
             var c = frame % this.columns;
             var r = (frame - c) / this.columns;
             var width = this.imgElem.width / this.columns;
             var height = this.imgElem.height / this.rows;
-            ctx.drawImage(this.imgElem, c * this.imgElem.width / this.columns, r * this.imgElem.height / this.rows, width,  height, -this.center.x, -this.center.y, width, height);
+
+            for(var i = 0; i < tileColumns; i++) {
+                for(var k = 0; k < tileRows; k++) {
+                    ctx.drawImage(this.imgElem,
+                        c * this.imgElem.width / this.columns, r * this.imgElem.height / this.rows,
+                        width,  height,
+                        i * width - this.center.x, k * height - this.center.y,
+                        width, height);
+                }
+            }
         }
     }
 
@@ -218,7 +231,7 @@ var Juego = new (function () {
         ctx.rotate(this.rotation);
         vctx.scale(this.scale); 
         if(this.sprite) {
-            this.sprite.draw(this.spriteFrame);
+            this.sprite.draw(this.spriteFrame, this.tileColumns, this.tileRows);
         }
         if(this.strokeStyle) {
             ctx.strokeStyle = this.strokeStyle;

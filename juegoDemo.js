@@ -74,9 +74,8 @@ transformationTester.addChild(transformationTesterChild);
 Juego.worldTree.addChild(transformationTester);
 
 transformationTester.update = function() {
-    this.rotation += Juego.Time.deltaTime * Math.PI / 2;
+    this.rotation += Juego.Time.deltaTime * 2;
     transformationTesterChild.rotation += Juego.Time.deltaTime;
-    transformationTesterChild.position = transformationTesterChild.position.rotate(Juego.Time.deltaTime * 2);
 }
 
 var localToWorldTestGadget = new Juego.RenderNode();
